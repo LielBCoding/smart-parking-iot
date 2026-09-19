@@ -1,8 +1,4 @@
-"""Small wrapper around paho-mqtt shared by all the components.
-
-It hides the connection details (client id, reconnect, callbacks) so the
-emulators and the manager only deal with topics and JSON payloads.
-"""
+"""Small wrapper around paho-mqtt shared by all the components."""
 import json
 import random
 import time
@@ -45,7 +41,7 @@ class MqttClient:
         if config.USERNAME:
             self.client.username_pw_set(config.USERNAME, config.PASSWORD)
 
-        # Last Will: the broker publishes this for us if we drop off the network
+        # last will, published by the broker if we drop off the network
         if will is not None:
             topic, payload = will
             self.client.will_set(topic, json.dumps(payload), qos=1)
@@ -58,7 +54,7 @@ class MqttClient:
     def connect(self):
         print("[%s] connecting to %s:%s as %s" % (self.name, config.BROKER_HOST,
                                                  config.BROKER_PORT, self.client_id))
-        # connect_async + loop_start keeps the GUI responsive and reconnects by itself
+        # non blocking connect, paho reconnects by itself
         self.client.connect_async(config.BROKER_HOST, config.BROKER_PORT, keepalive=60)
         self.client.loop_start()
 
@@ -89,7 +85,7 @@ class MqttClient:
         else:
             print("[%s] connected" % self.name)
             self.connected = True
-            # (re)subscribe after every connect, also after an automatic reconnect
+            # subscribe again after every (re)connect
             for topic in self._subscriptions:
                 client.subscribe(topic)
         if self._on_connection_change:

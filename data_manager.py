@@ -1,15 +1,5 @@
-"""Data manager - the "brain" of the SmartPark system (no GUI).
-
-Responsibilities:
-  1. subscribe to every device topic and store all the data in SQLite
-  2. keep the current picture of the lot (which spot is free, sensor health,
-     air quality, barrier state)
-  3. decide when to send INFO / WARNING / ALARM messages
-  4. drive the actuators (barrier, LED sign, ventilation fan)
-  5. publish a summary of the lot every cycle for the dashboard
-
-Run:  python data_manager.py
-"""
+"""Data manager: collects everything from the broker into SQLite, checks the
+rules, sends INFO / WARNING / ALARM and drives the actuators. No GUI."""
 import threading
 import time
 
@@ -93,8 +83,7 @@ class ParkingManager:
                     db.add_event(now(), "actuators", text)
                     print("actuators acknowledged: %s" % text)
         except Exception as err:
-            # an exception here would kill the paho network thread and the
-            # manager would silently stop receiving - log it and carry on
+            # a bad message must not kill the paho network thread
             print("error handling message on %s: %s (%s)" % (topic, text, err))
 
     def handle_spot(self, topic, data):

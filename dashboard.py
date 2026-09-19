@@ -1,11 +1,4 @@
-"""SmartPark control center - the main GUI of the operator.
-
-Shows the live state of every parking spot, the lot summary, the actuators,
-an occupancy history graph (loaded from the DB and updated live) and the
-INFO / WARNING / ALARM messages window.
-
-Run:  python dashboard.py
-"""
+"""Operator dashboard (main GUI)."""
 import sys
 import time
 
@@ -215,8 +208,7 @@ class Dashboard(QMainWindow):
         try:
             self.handle_message(topic, data, text)
         except Exception as err:
-            # PyQt aborts the whole application on an unhandled exception in a
-            # slot, so a strange message from the broker must be caught here
+            # a strange message from the broker must not crash the window
             print("bad message on %s: %s (%s)" % (topic, text, err))
 
     def handle_message(self, topic, data, text):

@@ -1,8 +1,4 @@
-"""SQLite storage for the SmartPark system.
-
-The data manager writes here, the dashboard reads the history from here.
-Run this file directly to print a short report of what is stored.
-"""
+"""SQLite storage. Run directly to print a report of what is stored."""
 import os
 import sqlite3
 

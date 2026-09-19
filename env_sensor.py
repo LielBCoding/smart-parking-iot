@@ -1,8 +1,4 @@
-"""Emulator of the environment sensor of an underground parking lot.
-
-Publishes temperature and carbon monoxide (CO) level. The two sliders work
-like knobs, so during a demo the values can be pushed above the thresholds
-to trigger a WARNING / ALARM and the ventilation fan.
+"""Temperature / CO sensor emulator, the sliders act as knobs.
 
 Usage:  python env_sensor.py [interval_seconds]
 """

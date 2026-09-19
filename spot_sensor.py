@@ -1,8 +1,4 @@
-"""Emulator of a parking spot occupancy sensor (data producer).
-
-Each running instance represents one physical sensor (ultrasonic / magnetic)
-installed in a parking spot. It publishes its state every few seconds even if
-nothing changed - this "heartbeat" lets the manager detect a dead sensor.
+"""Parking spot occupancy sensor emulator.
 
 Usage:  python spot_sensor.py A1 [interval_seconds]
 """

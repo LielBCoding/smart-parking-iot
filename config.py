@@ -1,6 +1,4 @@
-# Central configuration for the SmartPark system.
-# Every component (emulators, data manager, dashboard) imports this file,
-# so changing the broker or the thresholds is done in one place only.
+# Configuration shared by all the SmartPark components.
 
 # broker
 BROKER_HOST = "broker.hivemq.com"   # public test broker, no account needed

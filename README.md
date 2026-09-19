@@ -7,13 +7,12 @@ Author: **Liel Babayn**
 
 ## The problem and the idea
 
-Drivers in the city waste time and fuel circling around looking for a parking spot, and the
-municipality has no real-time picture of how full its parking lots are. SmartPark puts a cheap
-occupancy sensor in every parking spot, an air quality sensor in the underground level and a few
-actuators at the gate. All of them talk to each other only through an **MQTT broker**. A data
-manager collects everything into a database, decides when to raise Info / Warning / Alarm
-messages and controls the barrier, the LED sign and the ventilation fan. An operator follows
-the lot from a live dashboard.
+Drivers waste time circling around looking for a parking spot, and the municipality has no live
+picture of how full its lots are. SmartPark puts an occupancy sensor in every spot, an air quality
+sensor in the underground level and a few actuators at the gate. Everything talks through an
+**MQTT broker**. A data manager stores the data, raises Info / Warning / Alarm messages and
+controls the barrier, the LED sign and the ventilation fan. The operator follows the lot from a
+live dashboard.
 
 ## System architecture
 
@@ -36,9 +35,8 @@ the lot from a live dashboard.
    +-----------------------+                                        +-----------------+
 ```
 
-No component knows the address of another component. Everything is publish / subscribe through
-the broker (`broker.hivemq.com`, public, port 1883), which is the classic IoT pattern taught in
-the course.
+No component knows the address of another component. Everything goes publish / subscribe through
+the broker (`broker.hivemq.com`, public, port 1883).
 
 ## Components
 

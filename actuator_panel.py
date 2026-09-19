@@ -1,13 +1,5 @@
-"""Emulator of the actuators of the lot (relay type devices).
-
-Three relays are driven by the data manager through one command topic:
-  - the entry barrier        (open / closed)
-  - the LED sign at the gate (FREE: n / FULL)
-  - the ventilation fan      (on / off)
-
-The panel never decides anything by itself. It applies the command it
-receives and publishes back its real state as an acknowledgement.
-"""
+"""Actuator panel emulator: barrier, LED sign and ventilation fan (relays).
+It only applies the commands it gets and reports its state back."""
 import sys
 
 from PyQt5.QtCore import Qt
