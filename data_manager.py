@@ -19,8 +19,7 @@ from mqtt_client import MqttClient, now, parse
 
 WARMUP_SEC = 20   # grace period at startup while the emulators connect
 
-# the broker publishes this for us if the manager crashes or loses the network
-LAST_WILL = (config.TOPIC_ALERTS,
+LAST_WILL =(config.TOPIC_ALERTS,
              {"level": "ALARM", "source": "broker",
               "message": "Data manager went offline unexpectedly (last will)"})
 
@@ -45,7 +44,7 @@ class ParkingManager:
 
         self.actuators = {"barrier": "open", "sign": "FREE: %d" % config.CAPACITY, "fan": "off"}
 
-    # ============================================================ lifecycle
+    # --- start / main loop
     def start(self):
         db.init_db()
         for spot_id in config.SPOT_IDS:
@@ -76,7 +75,7 @@ class ParkingManager:
         finally:
             self.mqtt.disconnect()
 
-    # ============================================================ incoming
+    # --- incoming messages (paho network thread)
     def on_message(self, topic, text):
         data = parse(text)
         if data is None:
@@ -153,7 +152,7 @@ class ParkingManager:
         elif event == "exit":
             self.send_alert("INFO", "Car left through the main gate")
 
-    # ============================================================ periodic
+    # periodic check
     def cycle(self):
         """Runs every MANAGER_CYCLE_SEC: sensor health check + summary."""
         deadline = time.time() - config.SENSOR_TIMEOUT_SEC
@@ -168,7 +167,7 @@ class ParkingManager:
             self.evaluate_occupancy()
             self.publish_summary()
 
-    # ============================================================ rules
+    # --- rules
     def counts(self):
         free = 0
         occupied = 0
@@ -194,7 +193,7 @@ class ParkingManager:
             return
         free, occupied, capacity, percent = self.counts()
 
-        if free == 0 and not self.lot_full:
+        if free == 0 and occupied > 0 and not self.lot_full:
             self.lot_full = True
             self.warning_active = False
             self.actuators["barrier"] = "closed"
@@ -244,10 +243,12 @@ class ParkingManager:
                 elif level == "warning":
                     self.send_alert("WARNING", "CO level high: %d ppm" % co)
                 else:
+                    msg = "Air quality back to normal (%d ppm)" % co
                     if self.actuators["fan"] == "on":
                         self.actuators["fan"] = "off"
                         self.send_actuator_cmd()
-                    self.send_alert("INFO", "Air quality back to normal (%d ppm) - fan OFF" % co)
+                        msg += " - fan OFF"
+                    self.send_alert("INFO", msg)
                 self.env_level = level
 
         if temp is not None:
@@ -258,19 +259,19 @@ class ParkingManager:
                 self.temp_alarm = False
                 self.send_alert("INFO", "Temperature back to normal (%d C)" % temp)
 
-    # ============================================================ outgoing
+    # outgoing
     def send_alert(self, level, message):
         ts = now()
         payload = {"level": level, "source": "manager", "message": message, "ts": ts}
         print("%s  %-8s %s" % (ts, level, message))
         db.add_alert(ts, level, message)
-        # QoS 1 - an alarm must not get lost
+        # qos 1, alarms should not get lost
         self.mqtt.publish(config.TOPIC_ALERTS, payload, qos=1)
 
     def send_actuator_cmd(self):
         payload = dict(self.actuators)
         payload["ts"] = now()
-        # retained - a panel that starts later immediately gets the current state
+        # retained so a panel that starts late still gets the last command
         self.mqtt.publish(config.TOPIC_ACTUATOR_CMD, payload, qos=1, retain=True)
 
     def publish_summary(self):

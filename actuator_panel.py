@@ -71,7 +71,6 @@ class ActuatorPanelWindow(QWidget):
 
         self.refresh()
 
-    # ------------------------------------------------------------ logic
     def refresh(self):
         if self.state["barrier"] == "open":
             self.barrier_label.setText("OPEN")

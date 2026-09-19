@@ -79,7 +79,6 @@ class EnvSensorWindow(QWidget):
 
         self.refresh_values()
 
-    # ------------------------------------------------------------ logic
     def refresh_values(self):
         temp = self.temp_slider.value()
         co = self.co_slider.value()

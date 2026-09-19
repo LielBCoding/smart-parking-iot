@@ -1,9 +1,4 @@
-"""Qt friendly version of the MQTT client.
-
-paho runs its callbacks in a background network thread. Qt widgets must only
-be touched from the GUI thread, so the callbacks are converted to Qt signals
-here and the windows connect to those signals.
-"""
+"""MQTT client that emits Qt signals (paho callbacks run in another thread)."""
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from mqtt_client import MqttClient

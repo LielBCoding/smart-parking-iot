@@ -1,8 +1,4 @@
-"""Emulator of the entry / exit gate panel (button type device).
-
-In a real lot this is the ticket machine or the loop detector at the gate.
-Here it is two big buttons - every press publishes one event to the broker.
-"""
+"""Gate panel emulator - two buttons, every press publishes one event."""
 import sys
 
 from PyQt5.QtCore import Qt
@@ -75,7 +71,6 @@ class GatePanelWindow(QWidget):
         layout.addLayout(buttons)
         layout.addLayout(form)
 
-    # ------------------------------------------------------------ logic
     def send_event(self, event):
         payload = {"event": event, "gate": "main", "ts": now()}
         if self.mqtt.publish(config.TOPIC_GATE_EVENT, payload, qos=1):

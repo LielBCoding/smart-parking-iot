@@ -2,13 +2,13 @@
 # Every component (emulators, data manager, dashboard) imports this file,
 # so changing the broker or the thresholds is done in one place only.
 
-# ---------------------------------------------------------------- broker
+# broker
 BROKER_HOST = "broker.hivemq.com"   # public test broker, no account needed
 BROKER_PORT = 1883
 USERNAME = ""                       # leave empty for the public broker
 PASSWORD = ""
 
-# ---------------------------------------------------------------- topics
+# topics
 LOT_ID = "lot1"
 BASE_TOPIC = "smartpark/" + LOT_ID
 
@@ -21,21 +21,21 @@ TOPIC_ACTUATOR_STATE = BASE_TOPIC + "/actuators/state"      # actuator panel ack
 TOPIC_ALERTS = BASE_TOPIC + "/alerts"                       # INFO / WARNING / ALARM messages
 TOPIC_SUMMARY = BASE_TOPIC + "/summary"                     # manager -> dashboard, every cycle
 
-# ---------------------------------------------------------------- parking lot
+# parking lot
 SPOT_IDS = ["A1", "A2", "A3", "A4", "A5", "A6"]
 CAPACITY = len(SPOT_IDS)
 
 WARNING_OCCUPANCY = 0.8       # 80% occupied -> WARNING
 SENSOR_TIMEOUT_SEC = 20       # no heartbeat for 20 s -> sensor considered offline
 
-# ---------------------------------------------------------------- air quality
+# air quality
 CO_WARNING_PPM = 50
 CO_ALARM_PPM = 100
 TEMP_ALARM_C = 45
 
-# ---------------------------------------------------------------- timing
+# timing
 MANAGER_CYCLE_SEC = 5         # how often the manager re-evaluates the lot
 DEFAULT_PUBLISH_INTERVAL = 5  # default emulator publish rate (seconds)
 
-# ---------------------------------------------------------------- storage
+# storage
 DB_PATH = "data/smartpark.db"

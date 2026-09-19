@@ -61,7 +61,7 @@ class Dashboard(QMainWindow):
         self.load_history()
         self.mqtt.connect()
 
-    # ============================================================ UI
+    # --- building the window
     def build_ui(self):
         self.setWindowTitle("SmartPark - Control Center (%s)" % config.LOT_ID)
         self.resize(1180, 760)
@@ -198,7 +198,7 @@ class Dashboard(QMainWindow):
         layout.addWidget(self.alerts_view)
         return box
 
-    # ============================================================ data
+    # --- incoming data
     def load_history(self):
         db.init_db()
         for ts, percent in db.occupancy_history():

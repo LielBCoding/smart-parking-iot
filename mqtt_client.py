@@ -54,7 +54,7 @@ class MqttClient:
         self.client.on_disconnect = self._handle_disconnect
         self.client.on_message = self._handle_message
 
-    # ------------------------------------------------------------ public API
+    # public api
     def connect(self):
         print("[%s] connecting to %s:%s as %s" % (self.name, config.BROKER_HOST,
                                                  config.BROKER_PORT, self.client_id))
@@ -81,7 +81,7 @@ class MqttClient:
         self.client.publish(topic, payload, qos=qos, retain=retain)
         return True
 
-    # ------------------------------------------------------------ paho callbacks
+    # paho callbacks (network thread)
     def _handle_connect(self, client, userdata, flags, reason_code, properties):
         if reason_code.is_failure:
             print("[%s] connection failed: %s" % (self.name, reason_code))

@@ -52,6 +52,7 @@ the course.
 | `dashboard.py` | main GUI | Live spot map, free spots counter, occupancy bar, actuator state, air quality, occupancy history graph (from the DB + live) and the messages window. |
 | `db.py` | local DB | SQLite schema and helpers. `python db.py` prints a report of the stored data. |
 | `mqtt_client.py` / `qt_mqtt.py` | infrastructure | Thin wrapper around paho-mqtt, and a Qt version that turns the network callbacks into Qt signals. |
+| `theme.py` | infrastructure | Shared dark Qt stylesheet applied to every window. |
 | `config.py` | configuration | Broker, topics, thresholds, DB path - one place for everything. |
 
 ## MQTT topics
@@ -65,11 +66,12 @@ All topics live under `smartpark/lot1/`.
 | `gate/event` | gate panel -> manager, dashboard | `{"event": "enter", "gate": "main", "ts": "..."}` |
 | `actuators/cmd` | manager -> actuator panel, gate panel, dashboard | `{"barrier": "closed", "sign": "FULL", "fan": "on", "ts": "..."}` |
 | `actuators/state` | actuator panel -> manager, dashboard | same fields as the command (acknowledgement) |
-| `alerts` | manager -> dashboard | `{"level": "ALARM", "message": "Parking lot is FULL (6/6) - barrier closed", "ts": "..."}` |
+| `alerts` | manager -> dashboard | `{"level": "ALARM", "source": "manager", "message": "Parking lot is FULL (6/6) - barrier closed", "ts": "..."}` |
 | `summary` | manager -> dashboard | `{"free": 2, "occupied": 4, "percent": 66.7, "spots": {"A1": "occupied", ...}, "barrier": "open", ...}` |
 
-The manager and the dashboard subscribe with the wildcard `spot/+/status`, so new sensors can be
-added without changing any code.
+The manager and the dashboard subscribe with the wildcard `spot/+/status`. The manager picks up a
+new sensor automatically (it is added to the lot on its first message); to give it a tile on the
+dashboard add its id to `SPOT_IDS` in `config.py`.
 
 ## Alert rules (data manager)
 
@@ -77,24 +79,27 @@ added without changing any code.
 |-----------|-------|--------|
 | A spot changes state, a car passes the gate, sensor back online | INFO | message only |
 | 80% or more of the spots are occupied | WARNING | message |
-| All spots occupied | ALARM | barrier closed, LED sign shows FULL |
+| No free spot left (every online sensor reports occupied) | ALARM | barrier closed, LED sign shows FULL |
 | Free spot appears after the lot was full | INFO | barrier opened, sign shows FREE: n |
 | A car enters while the lot is full | ALARM | message (barrier failure) |
 | A sensor sent nothing for 20 s | ALARM | spot marked offline (gray) on the dashboard |
 | CO >= 50 ppm | WARNING | message |
 | CO >= 100 ppm | ALARM | ventilation fan ON |
-| CO back to normal | INFO | fan OFF |
+| CO back to normal | INFO | fan OFF (if it was on) |
 | Temperature >= 45 C | ALARM | message (possible fire) |
 
-Messages are sent only when a state changes, so the log is not flooded.
+Messages are sent only when a state changes, so the log is not flooded. A spot whose sensor is
+offline is counted as "not free" (safe side): the FREE sign never promises a spot the system
+cannot see. The rules start only after a 20 s warm-up (or once every sensor reported), so the lot
+does not look full while the emulators are still connecting.
 
 ## MQTT features used
 
 * publish / subscribe with hierarchical topics and the `+` wildcard
-* JSON payloads with a timestamp in every message
+* JSON payloads with a timestamp in every message the components publish (the Last Will is prepared at connect time, so it carries no timestamp)
 * **QoS 1** for alerts, gate events and actuator commands (must not get lost), QoS 0 for the periodic sensor data
 * **retained message** on `actuators/cmd` - a panel that starts late immediately receives the current state
-* **Last Will and Testament** - if the data manager drops off the network, the broker itself publishes an ALARM to the dashboard
+* **Last Will and Testament** - if the data manager drops off the network without a DISCONNECT packet (crash, power, Wi-Fi), the broker itself publishes an ALARM to the dashboard. Ctrl+C in the manager console is a clean disconnect, so the will is not sent - which is the correct MQTT behaviour
 * keep-alive and automatic reconnect handled by paho-mqtt
 
 ## How to run
@@ -106,13 +111,13 @@ pip install -r requirements.txt
 run_all.bat
 ```
 
-`run_all.bat` opens the data manager, the actuator panel, the gate panel, the environment sensor,
-six spot sensors and the dashboard. To run components by hand:
+`run_all.bat` (Windows) opens the data manager, the actuator panel, the gate panel, the environment
+sensor, six spot sensors and the dashboard. On other systems, or to run components by hand:
 
 ```
 python data_manager.py
 python spot_sensor.py A1        (repeat for A2 ... A6, optional second argument = interval in seconds)
-python env_sensor.py
+python env_sensor.py            (optional argument = interval in seconds)
 python gate_panel.py
 python actuator_panel.py
 python dashboard.py
@@ -128,7 +133,8 @@ python db.py                    (report of what is stored in the database)
 5. Push the CO slider above 100 ppm - ALARM and the ventilation fan turns ON.
 6. Free a spot and lower the CO - INFO messages, barrier opens, fan OFF.
 7. Close one spot sensor window - after 20 s an ALARM "sensor not responding" and the spot turns gray.
-8. Close the data manager window - the broker publishes the Last Will ALARM on the dashboard.
+8. Close the data manager console window (not Ctrl+C, that is a clean disconnect) - the broker
+   publishes the Last Will ALARM on the dashboard.
 
 ## Database
 
@@ -147,6 +153,7 @@ smart-parking-iot/
   config.py            configuration
   mqtt_client.py       paho-mqtt wrapper
   qt_mqtt.py           Qt signals bridge
+  theme.py             shared Qt stylesheet (dark theme)
   db.py                SQLite layer
   spot_sensor.py       emulator - occupancy sensor
   env_sensor.py        emulator - temperature / CO sensor

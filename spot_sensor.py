@@ -87,7 +87,6 @@ class SpotSensorWindow(QWidget):
 
         self.refresh_status()
 
-    # ------------------------------------------------------------ logic
     def refresh_status(self):
         if self.occupied:
             self.status_label.setText("OCCUPIED")
