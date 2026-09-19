@@ -20,7 +20,7 @@ class GatePanelWindow(QWidget):
         self.mqtt = QtMqttClient("gate-panel")
         self.mqtt.connection_changed.connect(self.on_connection_changed)
         self.mqtt.message_received.connect(self.on_message)
-        # the panel shows the sign text so the "driver" sees FREE / FULL
+        # show the sign text too
         self.mqtt.subscribe(config.TOPIC_ACTUATOR_CMD)
 
         self.build_ui()

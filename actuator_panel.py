@@ -100,7 +100,7 @@ class ActuatorPanelWindow(QWidget):
                                        self.state["sign"], self.state["fan"]))
         self.refresh()
         if changed:
-            # acknowledge the new physical state back to the system
+            # report the new state
             ack = dict(self.state)
             ack["ts"] = now()
             self.mqtt.publish(config.TOPIC_ACTUATOR_STATE, ack)

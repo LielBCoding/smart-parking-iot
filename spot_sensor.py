@@ -14,7 +14,7 @@ from mqtt_client import now
 from qt_mqtt import QtMqttClient
 from theme import apply_theme
 
-CHANGE_PROBABILITY = 0.3   # chance that a car arrives / leaves on every tick
+CHANGE_PROBABILITY = 0.3   # chance of a change on every tick
 
 STYLE_FREE = "background-color: #2ecc71; color: white; font-size: 26px; font-weight: bold; padding: 18px;"
 STYLE_OCCUPIED = "background-color: #e74c3c; color: white; font-size: 26px; font-weight: bold; padding: 18px;"

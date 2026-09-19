@@ -7,9 +7,9 @@ import config
 import db
 from mqtt_client import MqttClient, now, parse
 
-WARMUP_SEC = 20   # grace period at startup while the emulators connect
+WARMUP_SEC = 20   # startup grace period
 
-LAST_WILL =(config.TOPIC_ALERTS,
+LAST_WILL = (config.TOPIC_ALERTS,
              {"level": "ALARM", "source": "broker",
               "message": "Data manager went offline unexpectedly (last will)"})
 
@@ -32,7 +32,7 @@ class ParkingManager:
         self.last_free = None
         self.started_at = time.time()
 
-        # no number on the sign until the first real count is in
+        # number is added after the first count
         self.actuators = {"barrier": "open", "sign": "FREE", "fan": "off"}
 
     # --- start / main loop
@@ -47,7 +47,7 @@ class ParkingManager:
         self.mqtt.subscribe(config.TOPIC_ACTUATOR_STATE)
         self.mqtt.connect()
 
-        # wait for the connection before the first command goes out
+        # wait for the connection
         for _ in range(50):
             if self.mqtt.connected:
                 break
@@ -66,7 +66,7 @@ class ParkingManager:
         finally:
             self.mqtt.disconnect()
 
-    # --- incoming messages (paho network thread)
+    # --- incoming messages
     def on_message(self, topic, text):
         data = parse(text)
         if data is None:
@@ -84,13 +84,13 @@ class ParkingManager:
                     db.add_event(now(), "actuators", text)
                     print("actuators acknowledged: %s" % text)
         except Exception as err:
-            # a bad message must not kill the paho network thread
+            # bad message - skip it
             print("error handling message on %s: %s (%s)" % (topic, text, err))
 
     def handle_spot(self, topic, data):
         spot_id = data.get("spot") or topic.split("/")[-2]
         if spot_id not in self.spots:
-            # a sensor we did not configure - add it on the fly
+            # unknown sensor, add it
             self.spots[spot_id] = {"occupied": None, "last_seen": None, "online": False}
             self.send_alert("INFO", "New spot sensor discovered: %s" % spot_id)
 
@@ -117,7 +117,7 @@ class ParkingManager:
         temp = data.get("temperature")
         co = data.get("co_ppm")
         sensor = data.get("sensor", "ENV")
-        # a missing or non numeric value is treated as "no reading"
+        # ignore non numeric values
         if not isinstance(temp, (int, float)):
             temp = None
         if not isinstance(co, (int, float)):
@@ -144,7 +144,7 @@ class ParkingManager:
 
     # periodic check
     def cycle(self):
-        """Runs every MANAGER_CYCLE_SEC: sensor health check + summary."""
+        # every MANAGER_CYCLE_SEC: dead sensors + summary
         deadline = time.time() - config.SENSOR_TIMEOUT_SEC
         for spot_id, spot in self.spots.items():
             if spot["online"] and spot["last_seen"] < deadline:
@@ -173,8 +173,7 @@ class ParkingManager:
         return free, occupied, capacity, percent
 
     def ready(self):
-        """Rules start only after every sensor reported once (or after a warm-up
-        period), otherwise the lot looks "full" while the sensors are still connecting."""
+        # rules start after all sensors reported once, or after the warm-up
         reported = all(s["last_seen"] is not None for s in self.spots.values())
         return reported or time.time() - self.started_at > WARMUP_SEC
 
@@ -213,7 +212,7 @@ class ParkingManager:
                 self.send_actuator_cmd()
 
         if free != self.last_free:
-            # the dashboard should not wait for the next cycle to show the new count
+            # update the dashboard right away
             self.publish_summary()
         self.last_free = free
 
@@ -259,13 +258,13 @@ class ParkingManager:
         payload = {"level": level, "source": "manager", "message": message, "ts": ts}
         print("%s  %-8s %s" % (ts, level, message))
         db.add_alert(ts, level, message)
-        # qos 1, alarms should not get lost
+        # qos 1
         self.mqtt.publish(config.TOPIC_ALERTS, payload, qos=1)
 
     def send_actuator_cmd(self):
         payload = dict(self.actuators)
         payload["ts"] = now()
-        # retained so a panel that starts late still gets the last command
+        # retained, for panels that start late
         self.mqtt.publish(config.TOPIC_ACTUATOR_CMD, payload, qos=1, retain=True)
 
     def publish_summary(self):

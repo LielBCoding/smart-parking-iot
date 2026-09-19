@@ -9,18 +9,15 @@ import config
 
 
 def now():
-    """Timestamp string used in every message and DB row."""
     return time.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def parse(text):
-    """Decode a JSON payload, return None if it is not a valid JSON object."""
     try:
         data = json.loads(text)
     except ValueError:
         return None
-    # every message in the system is a dict - a bare list / number / string
-    # is not something the handlers can work with
+    # only dict payloads
     if not isinstance(data, dict):
         return None
     return data
@@ -41,7 +38,7 @@ class MqttClient:
         if config.USERNAME:
             self.client.username_pw_set(config.USERNAME, config.PASSWORD)
 
-        # last will, published by the broker if we drop off the network
+        # last will
         if will is not None:
             topic, payload = will
             self.client.will_set(topic, json.dumps(payload), qos=1)
@@ -54,7 +51,7 @@ class MqttClient:
     def connect(self):
         print("[%s] connecting to %s:%s as %s" % (self.name, config.BROKER_HOST,
                                                  config.BROKER_PORT, self.client_id))
-        # non blocking connect, paho reconnects by itself
+        # non blocking, paho reconnects by itself
         self.client.connect_async(config.BROKER_HOST, config.BROKER_PORT, keepalive=60)
         self.client.loop_start()
 
@@ -77,7 +74,7 @@ class MqttClient:
         self.client.publish(topic, payload, qos=qos, retain=retain)
         return True
 
-    # paho callbacks (network thread)
+    # paho callbacks
     def _handle_connect(self, client, userdata, flags, reason_code, properties):
         if reason_code.is_failure:
             print("[%s] connection failed: %s" % (self.name, reason_code))
@@ -85,7 +82,7 @@ class MqttClient:
         else:
             print("[%s] connected" % self.name)
             self.connected = True
-            # subscribe again after every (re)connect
+            # resubscribe after reconnect
             for topic in self._subscriptions:
                 client.subscribe(topic)
         if self._on_connection_change:

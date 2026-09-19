@@ -80,7 +80,7 @@ class EnvSensorWindow(QWidget):
         co = self.co_slider.value()
         self.temp_value.setText("%d C" % temp)
         self.co_value.setText("%d ppm" % co)
-        # colour the CO label according to the thresholds the manager uses
+        # colour by threshold
         if co >= config.CO_ALARM_PPM:
             self.co_value.setStyleSheet("color: #ff6b6b; font-weight: bold;")
         elif co >= config.CO_WARNING_PPM:

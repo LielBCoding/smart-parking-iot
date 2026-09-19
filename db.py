@@ -89,7 +89,7 @@ def add_occupancy(ts, occupied, free, capacity, percent):
 
 # --- readers
 def occupancy_history(limit=300):
-    """Last `limit` occupancy samples, oldest first: [(ts, percent), ...]"""
+    # oldest first
     with get_connection() as conn:
         rows = conn.execute("""SELECT ts, percent FROM occupancy
                                ORDER BY id DESC LIMIT ?""", (limit,)).fetchall()

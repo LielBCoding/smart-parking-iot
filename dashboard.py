@@ -208,7 +208,7 @@ class Dashboard(QMainWindow):
         try:
             self.handle_message(topic, data, text)
         except Exception as err:
-            # a strange message from the broker must not crash the window
+            # bad message - skip it
             print("bad message on %s: %s (%s)" % (topic, text, err))
 
     def handle_message(self, topic, data, text):
