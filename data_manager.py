@@ -210,6 +210,9 @@ class ParkingManager:
                 self.actuators["sign"] = "FREE: %d" % free
                 self.send_actuator_cmd()
 
+        if free != self.last_free:
+            # the dashboard should not wait for the next cycle to show the new count
+            self.publish_summary()
         self.last_free = free
 
     def evaluate_env(self):
