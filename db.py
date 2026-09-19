@@ -1,4 +1,4 @@
-"""SQLite storage. Run directly to print a report of what is stored."""
+"""SQLite storage, run directly for a small report"""
 import os
 import sqlite3
 
@@ -51,7 +51,6 @@ def init_db():
         """)
 
 
-# --- writers
 def upsert_device(device_id, device_type, ts, status):
     with get_connection() as conn:
         conn.execute("""INSERT INTO devices(device_id, device_type, last_seen, status)
@@ -87,7 +86,6 @@ def add_occupancy(ts, occupied, free, capacity, percent):
                      (ts, occupied, free, capacity, percent))
 
 
-# --- readers
 def occupancy_history(limit=300):
     # oldest first
     with get_connection() as conn:

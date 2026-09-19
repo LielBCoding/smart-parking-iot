@@ -65,7 +65,7 @@ class Dashboard(QMainWindow):
         root.setContentsMargins(16, 12, 16, 12)
         root.setSpacing(10)
 
-        # ---- header
+        # header
         header = QHBoxLayout()
         title = QLabel("SmartPark Control Center")
         title.setStyleSheet("font-size: 26px; font-weight: bold; color: #f5f6fa;")
@@ -83,14 +83,14 @@ class Dashboard(QMainWindow):
         header.addWidget(self.conn_label)
         root.addLayout(header)
 
-        # ---- middle row: spots | status | graph
+        # middle row: spots | status | graph
         middle = QHBoxLayout()
         middle.addWidget(self.build_spots_box(), 3)
         middle.addWidget(self.build_status_box(), 2)
         middle.addWidget(self.build_graph_box(), 4)
         root.addLayout(middle, 3)
 
-        # ---- bottom: alerts
+        # bottom: alerts
         root.addWidget(self.build_alerts_box(), 2)
 
     def build_spots_box(self):
@@ -208,7 +208,6 @@ class Dashboard(QMainWindow):
         try:
             self.handle_message(topic, data, text)
         except Exception as err:
-            # bad message - skip it
             print("bad message on %s: %s (%s)" % (topic, text, err))
 
     def handle_message(self, topic, data, text):

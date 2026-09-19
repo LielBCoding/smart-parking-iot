@@ -1,5 +1,4 @@
-"""Actuator panel emulator: barrier, LED sign and ventilation fan (relays).
-It only applies the commands it gets and reports its state back."""
+"""Actuator panel emulator: barrier, LED sign and fan."""
 import sys
 
 from PyQt5.QtCore import Qt

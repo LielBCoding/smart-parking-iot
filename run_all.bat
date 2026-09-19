@@ -1,8 +1,5 @@
 @echo off
-REM Starts the complete SmartPark demo on one machine (Windows).
-REM The MQTT broker is remote (see config.py), nothing to install locally.
-REM The data manager keeps its console (that is the log), the GUI windows
-REM are started with pythonw so they do not open extra consoles.
+REM starts everything, broker settings in config.py
 
 cd /d %~dp0
 

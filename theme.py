@@ -1,4 +1,4 @@
-"""Common look and feel (dark control-room theme) for all the SmartPark windows."""
+"""dark stylesheet"""
 from PyQt5.QtGui import QFont
 
 STYLE = """

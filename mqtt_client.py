@@ -1,4 +1,4 @@
-"""Small wrapper around paho-mqtt shared by all the components."""
+"""paho-mqtt wrapper"""
 import json
 import random
 import time
@@ -47,7 +47,6 @@ class MqttClient:
         self.client.on_disconnect = self._handle_disconnect
         self.client.on_message = self._handle_message
 
-    # public api
     def connect(self):
         print("[%s] connecting to %s:%s as %s" % (self.name, config.BROKER_HOST,
                                                  config.BROKER_PORT, self.client_id))

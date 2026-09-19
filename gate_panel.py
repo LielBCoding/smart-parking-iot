@@ -1,4 +1,4 @@
-"""Gate panel emulator - two buttons, every press publishes one event."""
+"""Gate panel emulator (enter / exit buttons)."""
 import sys
 
 from PyQt5.QtCore import Qt

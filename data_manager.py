@@ -1,5 +1,4 @@
-"""Data manager: collects everything from the broker into SQLite, checks the
-rules, sends INFO / WARNING / ALARM and drives the actuators. No GUI."""
+"""Data manager - DB, rules, alerts, actuator commands. No GUI."""
 import threading
 import time
 
@@ -7,7 +6,7 @@ import config
 import db
 from mqtt_client import MqttClient, now, parse
 
-WARMUP_SEC = 20   # startup grace period
+WARMUP_SEC = 20   # sec, wait at startup
 
 LAST_WILL = (config.TOPIC_ALERTS,
              {"level": "ALARM", "source": "broker",
@@ -32,7 +31,7 @@ class ParkingManager:
         self.last_free = None
         self.started_at = time.time()
 
-        # number is added after the first count
+        # no number yet
         self.actuators = {"barrier": "open", "sign": "FREE", "fan": "off"}
 
     # --- start / main loop
@@ -142,7 +141,6 @@ class ParkingManager:
         elif event == "exit":
             self.send_alert("INFO", "Car left through the main gate")
 
-    # periodic check
     def cycle(self):
         # every MANAGER_CYCLE_SEC: dead sensors + summary
         deadline = time.time() - config.SENSOR_TIMEOUT_SEC
@@ -173,7 +171,7 @@ class ParkingManager:
         return free, occupied, capacity, percent
 
     def ready(self):
-        # rules start after all sensors reported once, or after the warm-up
+        # all sensors reported once, or warm-up over
         reported = all(s["last_seen"] is not None for s in self.spots.values())
         return reported or time.time() - self.started_at > WARMUP_SEC
 
@@ -258,7 +256,6 @@ class ParkingManager:
         payload = {"level": level, "source": "manager", "message": message, "ts": ts}
         print("%s  %-8s %s" % (ts, level, message))
         db.add_alert(ts, level, message)
-        # qos 1
         self.mqtt.publish(config.TOPIC_ALERTS, payload, qos=1)
 
     def send_actuator_cmd(self):
