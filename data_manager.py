@@ -32,7 +32,8 @@ class ParkingManager:
         self.last_free = None
         self.started_at = time.time()
 
-        self.actuators = {"barrier": "open", "sign": "FREE: %d" % config.CAPACITY, "fan": "off"}
+        # no number on the sign until the first real count is in
+        self.actuators = {"barrier": "open", "sign": "FREE", "fan": "off"}
 
     # --- start / main loop
     def start(self):
@@ -181,13 +182,14 @@ class ParkingManager:
         if not self.ready():
             return
         free, occupied, capacity, percent = self.counts()
+        taken = capacity - free      # occupied or unknown (offline sensor)
 
         if free == 0 and occupied > 0 and not self.lot_full:
             self.lot_full = True
             self.warning_active = False
             self.actuators["barrier"] = "closed"
             self.actuators["sign"] = "FULL"
-            self.send_alert("ALARM", "Parking lot is FULL (%d/%d) - barrier closed" % (occupied, capacity))
+            self.send_alert("ALARM", "Parking lot is FULL (%d/%d) - barrier closed" % (taken, capacity))
             self.send_actuator_cmd()
 
         elif free > 0 and self.lot_full:
@@ -200,8 +202,8 @@ class ParkingManager:
         elif not self.lot_full:
             if percent >= config.WARNING_OCCUPANCY * 100 and not self.warning_active:
                 self.warning_active = True
-                self.send_alert("WARNING", "Lot almost full: %d/%d occupied (%.0f%%)"
-                                % (occupied, capacity, percent))
+                self.send_alert("WARNING", "Lot almost full: %d/%d spots taken (%.0f%%)"
+                                % (taken, capacity, percent))
             elif percent < config.WARNING_OCCUPANCY * 100 and self.warning_active:
                 self.warning_active = False
                 self.send_alert("INFO", "Occupancy back to normal (%.0f%%)" % percent)
