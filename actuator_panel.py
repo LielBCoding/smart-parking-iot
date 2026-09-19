@@ -99,7 +99,7 @@ class ActuatorPanelWindow(QWidget):
             return
         changed = False
         for key in ("barrier", "sign", "fan"):
-            if key in data and data[key] != self.state[key]:
+            if isinstance(data.get(key), str) and data[key] != self.state[key]:
                 self.state[key] = data[key]
                 changed = True
         self.received += 1

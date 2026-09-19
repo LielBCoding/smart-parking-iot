@@ -18,11 +18,16 @@ def now():
 
 
 def parse(text):
-    """Decode a JSON payload, return None if it is not valid JSON."""
+    """Decode a JSON payload, return None if it is not a valid JSON object."""
     try:
-        return json.loads(text)
+        data = json.loads(text)
     except ValueError:
         return None
+    # every message in the system is a dict - a bare list / number / string
+    # is not something the handlers can work with
+    if not isinstance(data, dict):
+        return None
+    return data
 
 
 class MqttClient:

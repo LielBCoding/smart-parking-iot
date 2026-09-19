@@ -89,7 +89,7 @@ class GatePanelWindow(QWidget):
 
     def on_message(self, topic, text):
         data = parse(text)
-        if data and "sign" in data:
+        if data and isinstance(data.get("sign"), str):
             self.sign_label.setText(data["sign"])
             if data["sign"].startswith("FULL"):
                 self.sign_label.setStyleSheet("background-color: #2c3e50; color: #e74c3c; "

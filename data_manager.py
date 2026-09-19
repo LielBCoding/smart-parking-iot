@@ -82,16 +82,21 @@ class ParkingManager:
         if data is None:
             print("ignoring non JSON message on %s: %s" % (topic, text))
             return
-        with self.lock:
-            if topic.startswith(config.BASE_TOPIC + "/spot/"):
-                self.handle_spot(topic, data)
-            elif topic == config.TOPIC_ENV:
-                self.handle_env(data)
-            elif topic == config.TOPIC_GATE_EVENT:
-                self.handle_gate(data)
-            elif topic == config.TOPIC_ACTUATOR_STATE:
-                db.add_event(now(), "actuators", text)
-                print("actuators acknowledged: %s" % text)
+        try:
+            with self.lock:
+                if topic.startswith(config.BASE_TOPIC + "/spot/"):
+                    self.handle_spot(topic, data)
+                elif topic == config.TOPIC_ENV:
+                    self.handle_env(data)
+                elif topic == config.TOPIC_GATE_EVENT:
+                    self.handle_gate(data)
+                elif topic == config.TOPIC_ACTUATOR_STATE:
+                    db.add_event(now(), "actuators", text)
+                    print("actuators acknowledged: %s" % text)
+        except Exception as err:
+            # an exception here would kill the paho network thread and the
+            # manager would silently stop receiving - log it and carry on
+            print("error handling message on %s: %s (%s)" % (topic, text, err))
 
     def handle_spot(self, topic, data):
         spot_id = data.get("spot") or topic.split("/")[-2]
@@ -123,10 +128,17 @@ class ParkingManager:
         temp = data.get("temperature")
         co = data.get("co_ppm")
         sensor = data.get("sensor", "ENV")
+        # a missing or non numeric value is treated as "no reading"
+        if not isinstance(temp, (int, float)):
+            temp = None
+        if not isinstance(co, (int, float)):
+            co = None
         self.env["temperature"] = temp
         self.env["co_ppm"] = co
-        db.add_reading(ts, sensor, "temperature", temp)
-        db.add_reading(ts, sensor, "co_ppm", co)
+        if temp is not None:
+            db.add_reading(ts, sensor, "temperature", temp)
+        if co is not None:
+            db.add_reading(ts, sensor, "co_ppm", co)
         db.upsert_device(sensor, "env_sensor", ts, "ok")
         self.evaluate_env()
 

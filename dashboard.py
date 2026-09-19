@@ -212,6 +212,14 @@ class Dashboard(QMainWindow):
         data = parse(text)
         if data is None:
             return
+        try:
+            self.handle_message(topic, data, text)
+        except Exception as err:
+            # PyQt aborts the whole application on an unhandled exception in a
+            # slot, so a strange message from the broker must be caught here
+            print("bad message on %s: %s (%s)" % (topic, text, err))
+
+    def handle_message(self, topic, data, text):
         if topic.startswith(config.BASE_TOPIC + "/spot/"):
             spot_id = data.get("spot") or topic.split("/")[-2]
             self.set_tile(spot_id, "occupied" if data.get("occupied") else "free")
@@ -269,11 +277,11 @@ class Dashboard(QMainWindow):
                                          % (BLUE if data["fan"] == "on" else MUTED))
 
     def apply_env(self, temp, co):
-        if temp is not None:
+        if isinstance(temp, (int, float)):
             self.temp_label.setText("%s C" % temp)
             self.temp_label.setStyleSheet("font-weight: bold; font-size: 14px; color: %s;"
                                           % (RED if temp >= config.TEMP_ALARM_C else TEXT))
-        if co is not None:
+        if isinstance(co, (int, float)):
             if co >= config.CO_ALARM_PPM:
                 color = RED
             elif co >= config.CO_WARNING_PPM:
@@ -289,7 +297,7 @@ class Dashboard(QMainWindow):
         prefix = "(history) " if from_history else ""
         self.alerts_view.append('<span style="color:%s; font-weight:%s;">%s %s%-8s %s</span>'
                                 % (color, weight, ts, prefix, level, message))
-        if not from_history:
+        if not from_history and level in self.counter_labels:
             self.counter_labels[level].setText("%s: %d" % (level, self.counters[level]))
 
     def clear_alerts(self):
