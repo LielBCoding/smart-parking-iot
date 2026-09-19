@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QFormLayout, QLabel,
 import config
 from mqtt_client import now
 from qt_mqtt import QtMqttClient
+from theme import apply_theme
 
 SENSOR_ID = "ENV1"
 
@@ -60,7 +61,7 @@ class EnvSensorWindow(QWidget):
         self.drift_check.setChecked(True)
 
         self.conn_label = QLabel("connecting...")
-        self.conn_label.setStyleSheet("color: gray;")
+        self.conn_label.setStyleSheet("color: #95a5a6;")
         self.sent_label = QLabel("0")
 
         form = QFormLayout()
@@ -86,15 +87,15 @@ class EnvSensorWindow(QWidget):
         self.co_value.setText("%d ppm" % co)
         # colour the CO label according to the thresholds the manager uses
         if co >= config.CO_ALARM_PPM:
-            self.co_value.setStyleSheet("color: red; font-weight: bold;")
+            self.co_value.setStyleSheet("color: #ff6b6b; font-weight: bold;")
         elif co >= config.CO_WARNING_PPM:
-            self.co_value.setStyleSheet("color: orange; font-weight: bold;")
+            self.co_value.setStyleSheet("color: #f5b041; font-weight: bold;")
         else:
-            self.co_value.setStyleSheet("color: green;")
+            self.co_value.setStyleSheet("color: #2ecc71;")
         if temp >= config.TEMP_ALARM_C:
-            self.temp_value.setStyleSheet("color: red; font-weight: bold;")
+            self.temp_value.setStyleSheet("color: #ff6b6b; font-weight: bold;")
         else:
-            self.temp_value.setStyleSheet("color: green;")
+            self.temp_value.setStyleSheet("color: #2ecc71;")
 
     def tick(self):
         if self.drift_check.isChecked():
@@ -114,10 +115,10 @@ class EnvSensorWindow(QWidget):
     def on_connection_changed(self, is_connected):
         if is_connected:
             self.conn_label.setText("connected")
-            self.conn_label.setStyleSheet("color: green;")
+            self.conn_label.setStyleSheet("color: #2ecc71;")
         else:
             self.conn_label.setText("disconnected")
-            self.conn_label.setStyleSheet("color: red;")
+            self.conn_label.setStyleSheet("color: #ff6b6b;")
 
     def closeEvent(self, event):
         self.mqtt.disconnect()
@@ -128,6 +129,7 @@ if __name__ == "__main__":
     interval = int(sys.argv[1]) if len(sys.argv) > 1 else config.DEFAULT_PUBLISH_INTERVAL
 
     app = QApplication(sys.argv)
+    apply_theme(app)
     window = EnvSensorWindow(interval)
     window.show()
     sys.exit(app.exec_())

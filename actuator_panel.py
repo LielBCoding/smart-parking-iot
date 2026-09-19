@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import (QApplication, QFormLayout, QLabel, QVBoxLayout,
 import config
 from mqtt_client import now, parse
 from qt_mqtt import QtMqttClient
+from theme import apply_theme
 
 BIG = "font-size: 20px; font-weight: bold; padding: 8px; color: white; background-color: %s;"
 
@@ -51,7 +52,7 @@ class ActuatorPanelWindow(QWidget):
         self.fan_label.setAlignment(Qt.AlignCenter)
 
         self.conn_label = QLabel("connecting...")
-        self.conn_label.setStyleSheet("color: gray;")
+        self.conn_label.setStyleSheet("color: #95a5a6;")
         self.received_label = QLabel("0")
         self.last_cmd_label = QLabel("-")
         self.last_cmd_label.setWordWrap(True)
@@ -116,10 +117,10 @@ class ActuatorPanelWindow(QWidget):
     def on_connection_changed(self, is_connected):
         if is_connected:
             self.conn_label.setText("connected")
-            self.conn_label.setStyleSheet("color: green;")
+            self.conn_label.setStyleSheet("color: #2ecc71;")
         else:
             self.conn_label.setText("disconnected")
-            self.conn_label.setStyleSheet("color: red;")
+            self.conn_label.setStyleSheet("color: #ff6b6b;")
 
     def closeEvent(self, event):
         self.mqtt.disconnect()
@@ -128,6 +129,7 @@ class ActuatorPanelWindow(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    apply_theme(app)
     window = ActuatorPanelWindow()
     window.show()
     sys.exit(app.exec_())

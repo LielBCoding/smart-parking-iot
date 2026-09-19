@@ -19,15 +19,22 @@ import config
 import db
 from mqtt_client import parse
 from qt_mqtt import QtMqttClient
+from theme import apply_theme
 
-TILE_STYLE = ("border-radius: 6px; color: white; font-size: 15px; font-weight: bold; "
+TILE_STYLE = ("border-radius: 10px; color: white; font-size: 17px; font-weight: bold; "
               "background-color: %s;")
-COLOR_FREE = "#2ecc71"
+COLOR_FREE = "#27ae60"
 COLOR_OCCUPIED = "#e74c3c"
-COLOR_OFFLINE = "#7f8c8d"
-COLOR_UNKNOWN = "#bdc3c7"
+COLOR_OFFLINE = "#636e72"
+COLOR_UNKNOWN = "#3d4a57"
 
-LEVEL_COLORS = {"INFO": "#2980b9", "WARNING": "#e67e22", "ALARM": "#c0392b"}
+LEVEL_COLORS = {"INFO": "#5dade2", "WARNING": "#f5b041", "ALARM": "#ff6b6b"}
+GREEN = "#2ecc71"
+RED = "#ff6b6b"
+ORANGE = "#f5b041"
+BLUE = "#5dade2"
+TEXT = "#ecf0f1"
+MUTED = "#95a5a6"
 
 
 def to_epoch(ts):
@@ -57,19 +64,28 @@ class Dashboard(QMainWindow):
     # ============================================================ UI
     def build_ui(self):
         self.setWindowTitle("SmartPark - Control Center (%s)" % config.LOT_ID)
-        self.resize(1150, 720)
+        self.resize(1180, 760)
 
         central = QWidget()
         self.setCentralWidget(central)
         root = QVBoxLayout(central)
+        root.setContentsMargins(16, 12, 16, 12)
+        root.setSpacing(10)
 
         # ---- header
         header = QHBoxLayout()
-        title = QLabel("SmartPark Control Center - Parking %s" % config.LOT_ID.replace("lot", "Lot "))
-        title.setStyleSheet("font-size: 22px; font-weight: bold;")
+        title = QLabel("SmartPark Control Center")
+        title.setStyleSheet("font-size: 26px; font-weight: bold; color: #f5f6fa;")
+        subtitle = QLabel("Parking %s  |  IoT monitoring over MQTT" % config.LOT_ID.replace("lot", "Lot "))
+        subtitle.setStyleSheet("font-size: 13px; color: %s;" % MUTED)
+        titles = QVBoxLayout()
+        titles.setSpacing(0)
+        titles.addWidget(title)
+        titles.addWidget(subtitle)
         self.conn_label = QLabel("connecting to %s ..." % config.BROKER_HOST)
-        self.conn_label.setStyleSheet("color: gray;")
-        header.addWidget(title)
+        self.conn_label.setStyleSheet("color: %s; padding: 6px 12px; border-radius: 12px; "
+                                      "background-color: #2f3640;" % MUTED)
+        header.addLayout(titles)
         header.addStretch()
         header.addWidget(self.conn_label)
         root.addLayout(header)
@@ -89,14 +105,14 @@ class Dashboard(QMainWindow):
         grid = QGridLayout(box)
         columns = 3
         for i, spot_id in enumerate(config.SPOT_IDS):
-            tile = QLabel("%s\n?" % spot_id)
+            tile = QLabel("%s\nwaiting" % spot_id)
             tile.setAlignment(Qt.AlignCenter)
-            tile.setMinimumSize(100, 80)
+            tile.setMinimumSize(105, 95)
             tile.setStyleSheet(TILE_STYLE % COLOR_UNKNOWN)
             grid.addWidget(tile, i // columns, i % columns)
             self.tiles[spot_id] = tile
         legend = QLabel("green = free    red = occupied    gray = sensor offline")
-        legend.setStyleSheet("color: gray; font-size: 11px;")
+        legend.setStyleSheet("color: %s; font-size: 11px;" % MUTED)
         grid.addWidget(legend, (len(config.SPOT_IDS) + columns - 1) // columns, 0, 1, columns)
         return box
 
@@ -106,9 +122,10 @@ class Dashboard(QMainWindow):
 
         self.free_label = QLabel("-")
         self.free_label.setAlignment(Qt.AlignCenter)
-        self.free_label.setStyleSheet("font-size: 44px; font-weight: bold; color: #27ae60;")
+        self.free_label.setStyleSheet("font-size: 52px; font-weight: bold; color: %s;" % GREEN)
         free_caption = QLabel("free spots")
         free_caption.setAlignment(Qt.AlignCenter)
+        free_caption.setStyleSheet("color: %s;" % MUTED)
 
         self.occupancy_bar = QProgressBar()
         self.occupancy_bar.setRange(0, 100)
@@ -130,8 +147,10 @@ class Dashboard(QMainWindow):
                 ("Ventilation fan:", self.fan_label), ("Temperature:", self.temp_label),
                 ("CO level:", self.co_label), ("Gate events:", self.gate_label)]
         for r, (caption, widget) in enumerate(rows, start=3):
-            layout.addWidget(QLabel(caption), r, 0)
-            widget.setStyleSheet("font-weight: bold;")
+            caption_label = QLabel(caption)
+            caption_label.setStyleSheet("color: %s;" % MUTED)
+            layout.addWidget(caption_label, r, 0)
+            widget.setStyleSheet("font-weight: bold; font-size: 14px;")
             layout.addWidget(widget, r, 1)
         return box
 
@@ -139,14 +158,19 @@ class Dashboard(QMainWindow):
         box = QGroupBox("Occupancy history (from DB + live)")
         layout = QVBoxLayout(box)
         self.plot = pg.PlotWidget(axisItems={"bottom": pg.DateAxisItem()})
-        self.plot.setBackground("w")
-        self.plot.showGrid(x=True, y=True, alpha=0.3)
+        self.plot.setBackground("#2f3640")
+        self.plot.showGrid(x=True, y=True, alpha=0.25)
         self.plot.setYRange(0, 100)
-        self.plot.setLabel("left", "occupied %")
+        self.plot.setLabel("left", "occupied %", color=MUTED)
+        for side in ("left", "bottom"):
+            axis = self.plot.getAxis(side)
+            axis.setPen(pg.mkPen("#57606f"))
+            axis.setTextPen(pg.mkPen(MUTED))
         self.plot.addLine(y=config.WARNING_OCCUPANCY * 100,
-                          pen=pg.mkPen("#e67e22", style=Qt.DashLine))
-        self.curve = self.plot.plot([], [], pen=pg.mkPen("#2980b9", width=2),
-                                    symbol="o", symbolSize=4, symbolBrush="#2980b9")
+                          pen=pg.mkPen(ORANGE, style=Qt.DashLine))
+        self.curve = self.plot.plot([], [], pen=pg.mkPen("#48dbfb", width=2),
+                                    symbol="o", symbolSize=5, symbolBrush="#48dbfb",
+                                    symbolPen=None)
         layout.addWidget(self.plot)
         return box
 
@@ -169,7 +193,8 @@ class Dashboard(QMainWindow):
 
         self.alerts_view = QTextEdit()
         self.alerts_view.setReadOnly(True)
-        self.alerts_view.setStyleSheet("font-family: Consolas, monospace; font-size: 12px;")
+        self.alerts_view.setStyleSheet("font-family: Consolas, monospace; font-size: 12px; "
+                                       "background-color: #111518;")
         layout.addWidget(self.alerts_view)
         return box
 
@@ -217,8 +242,8 @@ class Dashboard(QMainWindow):
     def apply_summary(self, data):
         free = data.get("free", 0)
         self.free_label.setText(str(free))
-        self.free_label.setStyleSheet("font-size: 44px; font-weight: bold; color: %s;"
-                                      % ("#c0392b" if free == 0 else "#27ae60"))
+        self.free_label.setStyleSheet("font-size: 52px; font-weight: bold; color: %s;"
+                                      % (RED if free == 0 else GREEN))
         self.occupancy_bar.setValue(int(data.get("percent", 0)))
         for spot_id, state in data.get("spots", {}).items():
             self.set_tile(spot_id, state)
@@ -234,29 +259,29 @@ class Dashboard(QMainWindow):
     def apply_actuators(self, data):
         if "barrier" in data:
             self.barrier_label.setText(data["barrier"].upper())
-            self.barrier_label.setStyleSheet("font-weight: bold; color: %s;"
-                                             % ("#27ae60" if data["barrier"] == "open" else "#c0392b"))
+            self.barrier_label.setStyleSheet("font-weight: bold; font-size: 14px; color: %s;"
+                                             % (GREEN if data["barrier"] == "open" else RED))
         if "sign" in data:
             self.sign_label.setText(data["sign"])
         if "fan" in data:
             self.fan_label.setText(data["fan"].upper())
-            self.fan_label.setStyleSheet("font-weight: bold; color: %s;"
-                                         % ("#2980b9" if data["fan"] == "on" else "gray"))
+            self.fan_label.setStyleSheet("font-weight: bold; font-size: 14px; color: %s;"
+                                         % (BLUE if data["fan"] == "on" else MUTED))
 
     def apply_env(self, temp, co):
         if temp is not None:
             self.temp_label.setText("%s C" % temp)
-            self.temp_label.setStyleSheet("font-weight: bold; color: %s;"
-                                          % ("#c0392b" if temp >= config.TEMP_ALARM_C else "black"))
+            self.temp_label.setStyleSheet("font-weight: bold; font-size: 14px; color: %s;"
+                                          % (RED if temp >= config.TEMP_ALARM_C else TEXT))
         if co is not None:
             if co >= config.CO_ALARM_PPM:
-                color = "#c0392b"
+                color = RED
             elif co >= config.CO_WARNING_PPM:
-                color = "#e67e22"
+                color = ORANGE
             else:
-                color = "black"
+                color = TEXT
             self.co_label.setText("%s ppm" % co)
-            self.co_label.setStyleSheet("font-weight: bold; color: %s;" % color)
+            self.co_label.setStyleSheet("font-weight: bold; font-size: 14px; color: %s;" % color)
 
     def append_alert(self, level, message, ts, from_history=False):
         color = LEVEL_COLORS.get(level, "black")
@@ -271,12 +296,13 @@ class Dashboard(QMainWindow):
         self.alerts_view.clear()
 
     def on_connection_changed(self, is_connected):
+        pill = "font-weight: bold; padding: 6px 12px; border-radius: 12px; background-color: #2f3640; color: %s;"
         if is_connected:
             self.conn_label.setText("connected to %s" % config.BROKER_HOST)
-            self.conn_label.setStyleSheet("color: green; font-weight: bold;")
+            self.conn_label.setStyleSheet(pill % GREEN)
         else:
             self.conn_label.setText("disconnected")
-            self.conn_label.setStyleSheet("color: red; font-weight: bold;")
+            self.conn_label.setStyleSheet(pill % RED)
 
     def closeEvent(self, event):
         self.mqtt.disconnect()
@@ -285,6 +311,7 @@ class Dashboard(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    apply_theme(app)
     window = Dashboard()
     window.show()
     sys.exit(app.exec_())

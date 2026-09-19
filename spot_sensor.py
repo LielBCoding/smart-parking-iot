@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QFormLayout, QLabel,
 import config
 from mqtt_client import now
 from qt_mqtt import QtMqttClient
+from theme import apply_theme
 
 CHANGE_PROBABILITY = 0.3   # chance that a car arrives / leaves on every tick
 
@@ -66,10 +67,10 @@ class SpotSensorWindow(QWidget):
         self.toggle_btn.clicked.connect(self.toggle)
 
         self.conn_label = QLabel("connecting...")
-        self.conn_label.setStyleSheet("color: gray;")
+        self.conn_label.setStyleSheet("color: #95a5a6;")
         self.sent_label = QLabel("0")
         self.topic_label = QLabel(self.topic)
-        self.topic_label.setStyleSheet("color: gray; font-size: 10px;")
+        self.topic_label.setStyleSheet("color: #95a5a6; font-size: 10px;")
 
         form = QFormLayout()
         form.addRow("Broker:", self.conn_label)
@@ -115,10 +116,10 @@ class SpotSensorWindow(QWidget):
     def on_connection_changed(self, is_connected):
         if is_connected:
             self.conn_label.setText("connected")
-            self.conn_label.setStyleSheet("color: green;")
+            self.conn_label.setStyleSheet("color: #2ecc71;")
         else:
             self.conn_label.setText("disconnected")
-            self.conn_label.setStyleSheet("color: red;")
+            self.conn_label.setStyleSheet("color: #ff6b6b;")
 
     def closeEvent(self, event):
         self.mqtt.disconnect()
@@ -130,6 +131,7 @@ if __name__ == "__main__":
     interval = int(sys.argv[2]) if len(sys.argv) > 2 else config.DEFAULT_PUBLISH_INTERVAL
 
     app = QApplication(sys.argv)
+    apply_theme(app)
     window = SpotSensorWindow(spot_id, interval)
     window.show()
     sys.exit(app.exec_())
